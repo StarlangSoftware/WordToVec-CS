@@ -27,7 +27,7 @@ namespace WordToVec
             this._vocabulary = new Vocabulary(corpus);
             this._parameter = parameter;
             this._corpus = corpus;
-            _wordVectors = new Matrix(_vocabulary.Size(), parameter.GetLayerSize(), -0.5, 0.5);
+            _wordVectors = new Matrix(_vocabulary.Size(), parameter.GetLayerSize(), -0.5, 0.5, new Random());
             _wordVectorUpdate = new Matrix(_vocabulary.Size(), parameter.GetLayerSize());
             PrepareExpTable();
         }

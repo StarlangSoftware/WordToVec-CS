@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.2</TargetFramework>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>NlpToolkit-WordToVec</PackageId>
+        <PackageVersion>1.0.1</PackageVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="NlpToolkit-Corpus" Version="1.0.3" />
+      <PackageReference Include="NlpToolkit-Dictionary" Version="1.0.5" />
+    </ItemGroup>
+
+</Project>
