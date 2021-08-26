@@ -9,6 +9,7 @@ namespace WordToVec
         private bool _hierarchicalSoftMax;
         private int _negativeSamplingSize = 5;
         private int _numberOfIterations = 3;
+        private int _seed = 1;
 
         /**
          * <summary>Empty constructor for Word2Vec parameter</summary>
@@ -81,6 +82,15 @@ namespace WordToVec
         }
 
         /**
+         * <summary>Accessor for the seed attribute.</summary>
+         * <returns>Seed to train the network.</returns>
+         */
+        public int GetSeed()
+        {
+            return _seed;
+        }
+
+        /**
          * <summary>Mutator for the layerSize attribute.</summary>
          * <param name="layerSize">New size of the word vectors.</param>
          */
@@ -141,6 +151,15 @@ namespace WordToVec
         public void SetNumberOfIterations(int numberOfIterations)
         {
             this._numberOfIterations = numberOfIterations;
+        }
+        
+        /**
+         * <summary>Mutator for the seed attribute.</summary>
+         * <param name="seed">New seed.</param>
+         */
+        public void SetSeed(int seed)
+        {
+            this._seed = seed;
         }
     }
 }

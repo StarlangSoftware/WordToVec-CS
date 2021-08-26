@@ -27,7 +27,8 @@ namespace WordToVec
             this._vocabulary = new Vocabulary(corpus);
             this._parameter = parameter;
             this._corpus = corpus;
-            _wordVectors = new Matrix(_vocabulary.Size(), parameter.GetLayerSize(), -0.5, 0.5, new Random());
+            _wordVectors = new Matrix(_vocabulary.Size(), parameter.GetLayerSize(), -0.5, 0.5, 
+                new Random(_parameter.GetSeed()));
             _wordVectorUpdate = new Matrix(_vocabulary.Size(), parameter.GetLayerSize());
             PrepareExpTable();
         }
@@ -100,10 +101,10 @@ namespace WordToVec
         {
             var iteration = new Iteration(_corpus, _parameter);
             var currentSentence = _corpus.GetSentence(iteration.GetSentenceIndex());
-            var random = new Random();
+            var random = new Random(_parameter.GetSeed());
             var outputs = new Vector(_parameter.GetLayerSize(), 0);
             var outputUpdate = new Vector(_parameter.GetLayerSize(), 0);
-            _corpus.ShuffleSentences(1);
+            _corpus.ShuffleSentences(_parameter.GetSeed());
             while (iteration.GetIterationCount() < _parameter.GetNumberOfIterations())
             {
                 iteration.AlphaUpdate();
@@ -200,10 +201,10 @@ namespace WordToVec
         {
             var iteration = new Iteration(_corpus, _parameter);
             var currentSentence = _corpus.GetSentence(iteration.GetSentenceIndex());
-            var random = new Random();
+            var random = new Random(_parameter.GetSeed());
             var outputs = new Vector(_parameter.GetLayerSize(), 0);
             var outputUpdate = new Vector(_parameter.GetLayerSize(), 0);
-            _corpus.ShuffleSentences(1);
+            _corpus.ShuffleSentences(_parameter.GetSeed());
             while (iteration.GetIterationCount() < _parameter.GetNumberOfIterations())
             {
                 iteration.AlphaUpdate();
