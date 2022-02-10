@@ -4,11 +4,11 @@
         <TargetFramework>netcoreapp2.2</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>NlpToolkit-WordToVec</PackageId>
-        <PackageVersion>1.0.4</PackageVersion>
+        <PackageVersion>1.0.5</PackageVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="NlpToolkit-Corpus" Version="1.0.5" />
+      <PackageReference Include="NlpToolkit-Corpus" Version="1.0.8" />
     </ItemGroup>
 
 </Project>
