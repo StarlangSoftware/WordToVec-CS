@@ -1,4 +1,5 @@
 using System;
+using Corpus;
 using Dictionary.Dictionary;
 using Math;
 
@@ -10,7 +11,7 @@ namespace WordToVec
         private readonly Matrix _wordVectorUpdate;
         private readonly Vocabulary _vocabulary;
         private readonly WordToVecParameter _parameter;
-        private readonly Corpus.Corpus _corpus;
+        private readonly CorpusStream _corpus;
         private double[] _expTable;
         private static int EXP_TABLE_SIZE = 1000;
         private static int MAX_EXP = 6;
@@ -22,7 +23,7 @@ namespace WordToVec
          * <param name="corpus">Corpus used to train word vectors using Word2Vec algorithm.</param>
          * <param name="parameter">Parameters of the Word2Vec algorithm.</param>
          */
-        public NeuralNetwork(Corpus.Corpus corpus, WordToVecParameter parameter)
+        public NeuralNetwork(CorpusStream corpus, WordToVecParameter parameter)
         {
             this._vocabulary = new Vocabulary(corpus);
             this._parameter = parameter;
@@ -100,14 +101,14 @@ namespace WordToVec
         private void TrainCbow()
         {
             var iteration = new Iteration(_corpus, _parameter);
-            var currentSentence = _corpus.GetSentence(iteration.GetSentenceIndex());
+            _corpus.Open();
+            var currentSentence = _corpus.GetSentence();
             var random = new Random(_parameter.GetSeed());
             var outputs = new Vector(_parameter.GetLayerSize(), 0);
             var outputUpdate = new Vector(_parameter.GetLayerSize(), 0);
-            _corpus.ShuffleSentences(_parameter.GetSeed());
             while (iteration.GetIterationCount() < _parameter.GetNumberOfIterations())
             {
-                iteration.AlphaUpdate();
+                iteration.AlphaUpdate(_vocabulary.GetTotalNumberOfWords());
                 var wordIndex = _vocabulary.GetPosition(currentSentence.GetWord(iteration.GetSentencePosition()));
                 var currentWord = _vocabulary.GetWord(wordIndex);
                 outputs.Clear();
@@ -192,6 +193,7 @@ namespace WordToVec
 
                 currentSentence = iteration.SentenceUpdate(currentSentence);
             }
+            _corpus.Close();
         }
 
         /**
@@ -200,14 +202,14 @@ namespace WordToVec
         private void TrainSkipGram()
         {
             var iteration = new Iteration(_corpus, _parameter);
-            var currentSentence = _corpus.GetSentence(iteration.GetSentenceIndex());
+            _corpus.Open();
+            var currentSentence = _corpus.GetSentence();
             var random = new Random(_parameter.GetSeed());
             var outputs = new Vector(_parameter.GetLayerSize(), 0);
             var outputUpdate = new Vector(_parameter.GetLayerSize(), 0);
-            _corpus.ShuffleSentences(_parameter.GetSeed());
             while (iteration.GetIterationCount() < _parameter.GetNumberOfIterations())
             {
-                iteration.AlphaUpdate();
+                iteration.AlphaUpdate(_vocabulary.GetTotalNumberOfWords());
                 var wordIndex = _vocabulary.GetPosition(currentSentence.GetWord(iteration.GetSentencePosition()));
                 var currentWord = _vocabulary.GetWord(wordIndex);
                 outputs.Clear();
@@ -279,6 +281,7 @@ namespace WordToVec
 
                 currentSentence = iteration.SentenceUpdate(currentSentence);
             }
+            _corpus.Close();
         }
     }
 }

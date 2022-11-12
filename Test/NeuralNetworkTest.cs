@@ -1,3 +1,4 @@
+using Corpus;
 using Dictionary.Dictionary;
 using NUnit.Framework;
 using WordToVec;
@@ -6,16 +7,16 @@ namespace Test
 {
     public class NeuralNetworkTest
     {
-        Corpus.Corpus turkish, english;
+        CorpusStream turkish, english;
 
         [SetUp]
         public void Setup()
         {
-            english = new Corpus.Corpus("../../../english-similarity-dataset.txt");
-            turkish = new Corpus.Corpus("../../../turkish-similarity-dataset.txt");
+            english = new CorpusStream("../../../english-similarity-dataset.txt");
+            turkish = new CorpusStream("../../../turkish-similarity-dataset.txt");
         }
 
-        private VectorizedDictionary Train(Corpus.Corpus corpus, bool cBow)
+        private VectorizedDictionary Train(CorpusStream corpus, bool cBow)
         {
             var parameter = new WordToVecParameter();
             parameter.SetCbow(cBow);

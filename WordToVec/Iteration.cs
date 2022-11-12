@@ -6,10 +6,10 @@ namespace WordToVec
     {
         private int _wordCount, _lastWordCount, _wordCountActual;
         private int _iterationCount;
-        private int _sentencePosition, _sentenceIndex;
+        private int _sentencePosition;
         private readonly double _startingAlpha;
         private double _alpha;
-        public readonly Corpus.Corpus corpus;
+        public readonly CorpusStream corpus;
         private readonly WordToVecParameter _wordToVecParameter;
 
         /**
@@ -18,10 +18,10 @@ namespace WordToVec
          * <param name="corpus">Corpus used to train word vectors using Word2Vec algorithm.</param>
          * <param name="wordToVecParameter">Parameters of the Word2Vec algorithm.</param>
          */
-        public Iteration(Corpus.Corpus corpus, WordToVecParameter wordToVecParameter)
+        public Iteration(CorpusStream corpus, WordToVecParameter wordToVecParameter)
         {
             this.corpus = corpus;
-            this._wordToVecParameter = wordToVecParameter;
+            _wordToVecParameter = wordToVecParameter;
             _startingAlpha = wordToVecParameter.GetAlpha();
             _alpha = wordToVecParameter.GetAlpha();
         }
@@ -45,15 +45,6 @@ namespace WordToVec
         }
 
         /**
-         * <summary>Accessor for the sentenceIndex attribute.</summary>
-         * <returns>SentenceIndex attribute</returns>
-         */
-        public int GetSentenceIndex()
-        {
-            return _sentenceIndex;
-        }
-
-        /**
          * <summary>Accessor for the sentencePosition attribute.</summary>
          * <returns>SentencePosition attribute</returns>
          */
@@ -65,14 +56,14 @@ namespace WordToVec
         /**
          * <summary>Updates the alpha parameter after 10000 words has been processed.</summary>
          */
-        public void AlphaUpdate()
+        public void AlphaUpdate(int totalNumberOfWords)
         {
             if (_wordCount - _lastWordCount > 10000)
             {
                 _wordCountActual += _wordCount - _lastWordCount;
                 _lastWordCount = _wordCount;
                 _alpha = _startingAlpha * (1 - _wordCountActual /
-                    (_wordToVecParameter.GetNumberOfIterations() * corpus.NumberOfWords() + 1.0));
+                    (_wordToVecParameter.GetNumberOfIterations() * totalNumberOfWords + 1.0));
                 if (_alpha < _startingAlpha * 0.0001)
                     _alpha = _startingAlpha * 0.0001;
             }
@@ -92,18 +83,19 @@ namespace WordToVec
             if (_sentencePosition >= currentSentence.WordCount())
             {
                 _wordCount += currentSentence.WordCount();
-                _sentenceIndex++;
                 _sentencePosition = 0;
-                if (_sentenceIndex == corpus.SentenceCount())
+                var sentence = corpus.GetSentence();
+                if (sentence == null)
                 {
                     _iterationCount++;
                     _wordCount = 0;
                     _lastWordCount = 0;
-                    _sentenceIndex = 0;
-                    corpus.ShuffleSentences(1);
+                    corpus.Close();
+                    corpus.Open();
+                    sentence = corpus.GetSentence();
                 }
 
-                return corpus.GetSentence(_sentenceIndex);
+                return sentence;
             }
 
             return currentSentence;

@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using Corpus;
+using DataStructure;
 using Dictionary.Dictionary;
 
 namespace WordToVec
@@ -7,6 +10,7 @@ namespace WordToVec
     {
         private readonly List<VocabularyWord> _vocabulary;
         private int[] _table;
+        private int _totalNumberOfWords;
 
         /**
          * <summary>Constructor for the {@link Vocabulary} class. For each distinct word in the corpus, a {@link VocabularyWord}
@@ -14,12 +18,22 @@ namespace WordToVec
          * where after Huffman tree is created based on the number of occurrences of the words.</summary>
          * <param name="corpus">Corpus used to train word vectors using Word2Vec algorithm.</param>
          */
-        public Vocabulary(Corpus.Corpus corpus)
+        public Vocabulary(CorpusStream corpus)
         {
-            var wordList = corpus.GetWordList();
+            var counts = new CounterHashMap<string>();
+            corpus.Open();
+            var sentence = corpus.GetSentence();
+            while (sentence != null){
+                for (int i = 0; i < sentence.WordCount(); i++){
+                    counts.Put(sentence.GetWord(i).GetName());
+                }
+                _totalNumberOfWords += sentence.WordCount();
+                sentence = corpus.GetSentence();
+            }
+            corpus.Close();
             _vocabulary = new List<VocabularyWord>();
-            foreach (var word in wordList){
-                _vocabulary.Add(new VocabularyWord(word.GetName(), corpus.GetCount(word)));
+            foreach (var word in counts.Keys){
+                _vocabulary.Add(new VocabularyWord(word, counts[word]));
             }
             _vocabulary.Sort();
             CreateUniGramTable();
@@ -47,6 +61,11 @@ namespace WordToVec
             return _vocabulary.BinarySearch(vocabularyWord, new TurkishWordComparator());
         }
 
+        public int GetTotalNumberOfWords()
+        {
+            return _totalNumberOfWords;
+        }
+        
         /**
          * <summary>Returns the word at a given index.</summary>
          * <param name="index">Index of the word.</param>
