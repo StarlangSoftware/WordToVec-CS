@@ -7,14 +7,15 @@ namespace WordToVec
 {
     public class NeuralNetwork
     {
-        private readonly Matrix _wordVectors;
-        private readonly Matrix _wordVectorUpdate;
+        private readonly double[,] _wordVectors;
+        private readonly double[,] _wordVectorUpdate;
         private readonly Vocabulary _vocabulary;
         private readonly WordToVecParameter _parameter;
-        private readonly CorpusStream _corpus;
+        private readonly AbstractCorpus _corpus;
         private double[] _expTable;
         private static int EXP_TABLE_SIZE = 1000;
         private static int MAX_EXP = 6;
+        private int _vectorLength;
 
         /**
          * <summary>Constructor for the {@link NeuralNetwork} class. Gets corpus and network parameters as input and sets the
@@ -23,15 +24,26 @@ namespace WordToVec
          * <param name="corpus">Corpus used to train word vectors using Word2Vec algorithm.</param>
          * <param name="parameter">Parameters of the Word2Vec algorithm.</param>
          */
-        public NeuralNetwork(CorpusStream corpus, WordToVecParameter parameter)
+        public NeuralNetwork(AbstractCorpus corpus, WordToVecParameter parameter)
         {
-            this._vocabulary = new Vocabulary(corpus);
-            this._parameter = parameter;
-            this._corpus = corpus;
-            _wordVectors = new Matrix(_vocabulary.Size(), parameter.GetLayerSize(), -0.5, 0.5, 
-                new Random(_parameter.GetSeed()));
-            _wordVectorUpdate = new Matrix(_vocabulary.Size(), parameter.GetLayerSize());
+            var random = new Random(parameter.GetSeed());
+            _vectorLength = parameter.GetLayerSize();
+            _vocabulary = new Vocabulary(corpus);
+            _parameter = parameter;
+            _corpus = corpus;
+            var row = _vocabulary.Size();
+            _wordVectors = new double[row,_vectorLength];
+            for (var i = 0; i < row; i++) {
+                for (var j = 0; j < _vectorLength; j++) {
+                    _wordVectors[i, j] = -0.5 + random.NextDouble();
+                }
+            }
+            _wordVectorUpdate = new double[row,_vectorLength];
             PrepareExpTable();
+        }
+
+        public int VocabularySize(){
+            return _vocabulary.Size();
         }
 
         /**
@@ -67,7 +79,11 @@ namespace WordToVec
 
             for (var i = 0; i < _vocabulary.Size(); i++)
             {
-                result.AddWord(new VectorizedWord(_vocabulary.GetWord(i).GetName(), _wordVectors.GetRow(i)));
+                var vector = new Vector(0, 0);
+                for (var j = 0; j < _vectorLength; j++){
+                    vector.Add(_wordVectors[i, j]);
+                }
+                result.AddWord(new VectorizedWord(_vocabulary.GetWord(i).GetName(), vector));
             }
 
             return result;
@@ -95,6 +111,15 @@ namespace WordToVec
             return (label - _expTable[(int) ((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha;
         }
 
+        private void UpdateOutput(double[] outputUpdate, double[] outputs, int l2, double g){
+            for (var j = 0; j < _vectorLength; j++){
+                outputUpdate[j] += _wordVectorUpdate[l2, j] * g;
+            }
+            for (var j = 0; j < _vectorLength; j++){
+                _wordVectorUpdate[l2, j] += outputs[j] * g;
+            }
+        }
+
         /**
          * <summary>Main method for training the CBow version of Word2Vec algorithm.</summary>
          */
@@ -104,15 +129,15 @@ namespace WordToVec
             _corpus.Open();
             var currentSentence = _corpus.GetSentence();
             var random = new Random(_parameter.GetSeed());
-            var outputs = new Vector(_parameter.GetLayerSize(), 0);
-            var outputUpdate = new Vector(_parameter.GetLayerSize(), 0);
+            var outputs = new double[_vectorLength];
+            var outputUpdate = new double[_vectorLength];
             while (iteration.GetIterationCount() < _parameter.GetNumberOfIterations())
             {
                 iteration.AlphaUpdate(_vocabulary.GetTotalNumberOfWords());
                 var wordIndex = _vocabulary.GetPosition(currentSentence.GetWord(iteration.GetSentencePosition()));
                 var currentWord = _vocabulary.GetWord(wordIndex);
-                outputs.Clear();
-                outputUpdate.Clear();
+                Array.Fill(outputs, 0);
+                Array.Fill(outputUpdate, 0);
                 var b = random.Next(_parameter.GetWindow());
                 var cw = 0;
                 int lastWordIndex;
@@ -122,14 +147,18 @@ namespace WordToVec
                     if (a != _parameter.GetWindow() && currentSentence.SafeIndex(c))
                     {
                         lastWordIndex = _vocabulary.GetPosition(currentSentence.GetWord(c));
-                        outputs.Add(_wordVectors.GetRow(lastWordIndex));
+                        for (var j = 0; j < _vectorLength; j++){
+                            outputs[j] += _wordVectors[lastWordIndex, j];
+                        }
                         cw++;
                     }
                 }
 
                 if (cw > 0)
                 {
-                    outputs.Divide(cw);
+                    for (var j = 0; j < _vectorLength; j++){
+                        outputs[j] /= cw;
+                    }
                     int l2;
                     double f;
                     double g;
@@ -138,7 +167,10 @@ namespace WordToVec
                         for (var d = 0; d < currentWord.GetCodeLength(); d++)
                         {
                             l2 = currentWord.GetPoint(d);
-                            f = outputs.DotProduct(_wordVectorUpdate.GetRow(l2));
+                            f = 0;
+                            for (var j = 0; j < _vectorLength; j++){
+                                f += outputs[j] * _wordVectorUpdate[l2, j];
+                            }
                             if (f <= -MAX_EXP || f >= MAX_EXP)
                             {
                                 continue;
@@ -147,8 +179,7 @@ namespace WordToVec
                             f = _expTable[(int) ((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))];
 
                             g = (1 - currentWord.GetCode(d) - f) * iteration.GetAlpha();
-                            outputUpdate.Add(_wordVectorUpdate.GetRow(l2).Product(g));
-                            _wordVectorUpdate.Add(l2, outputs.Product(g));
+                            UpdateOutput(outputUpdate, outputs, l2, g);
                         }
                     }
                     else
@@ -173,10 +204,12 @@ namespace WordToVec
                             }
 
                             l2 = target;
-                            f = outputs.DotProduct(_wordVectorUpdate.GetRow(l2));
+                            f = 0;
+                            for (var j = 0; j < _vectorLength; j++){
+                                f += outputs[j] * _wordVectorUpdate[l2, j];
+                            }
                             g = CalculateG(f, iteration.GetAlpha(), label);
-                            outputUpdate.Add(_wordVectorUpdate.GetRow(l2).Product(g));
-                            _wordVectorUpdate.Add(l2, outputs.Product(g));
+                            UpdateOutput(outputUpdate, outputs, l2, g);
                         }
                     }
 
@@ -186,7 +219,9 @@ namespace WordToVec
                         if (a != _parameter.GetWindow() && currentSentence.SafeIndex(c))
                         {
                             lastWordIndex = _vocabulary.GetPosition(currentSentence.GetWord(c));
-                            _wordVectors.Add(lastWordIndex, outputUpdate);
+                            for (var j = 0; j < _vectorLength; j++){
+                                _wordVectors[lastWordIndex, j] += outputUpdate[j];
+                            }
                         }
                     }
                 }
@@ -205,15 +240,13 @@ namespace WordToVec
             _corpus.Open();
             var currentSentence = _corpus.GetSentence();
             var random = new Random(_parameter.GetSeed());
-            var outputs = new Vector(_parameter.GetLayerSize(), 0);
-            var outputUpdate = new Vector(_parameter.GetLayerSize(), 0);
+            var outputUpdate = new double[_vectorLength];
             while (iteration.GetIterationCount() < _parameter.GetNumberOfIterations())
             {
                 iteration.AlphaUpdate(_vocabulary.GetTotalNumberOfWords());
                 var wordIndex = _vocabulary.GetPosition(currentSentence.GetWord(iteration.GetSentencePosition()));
                 var currentWord = _vocabulary.GetWord(wordIndex);
-                outputs.Clear();
-                outputUpdate.Clear();
+                Array.Fill(outputUpdate, 0);
                 var b = random.Next(_parameter.GetWindow());
                 for (var a = b; a < _parameter.GetWindow() * 2 + 1 - b; a++)
                 {
@@ -222,7 +255,7 @@ namespace WordToVec
                     {
                         var lastWordIndex = _vocabulary.GetPosition(currentSentence.GetWord(c));
                         var l1 = lastWordIndex;
-                        outputUpdate.Clear();
+                        Array.Fill(outputUpdate, 0);
                         int l2;
                         double f;
                         double g;
@@ -231,7 +264,11 @@ namespace WordToVec
                             for (int d = 0; d < currentWord.GetCodeLength(); d++)
                             {
                                 l2 = currentWord.GetPoint(d);
-                                f = _wordVectors.GetRow(l1).DotProduct(_wordVectorUpdate.GetRow(l2));
+                                f = 0;
+                                for (var j = 0; j < _vectorLength; j++)
+                                {
+                                    f += _wordVectors[l1, j] * _wordVectorUpdate[l2, j];
+                                }
                                 if (f <= -MAX_EXP || f >= MAX_EXP)
                                 {
                                     continue;
@@ -242,13 +279,17 @@ namespace WordToVec
                                 }
 
                                 g = (1 - currentWord.GetCode(d) - f) * iteration.GetAlpha();
-                                outputUpdate.Add(_wordVectorUpdate.GetRow(l2).Product(g));
-                                _wordVectorUpdate.Add(l2, _wordVectors.GetRow(l1).Product(g));
+                                for (var j = 0; j < _vectorLength; j++){
+                                    outputUpdate[j] += _wordVectorUpdate[l2, j] * g;
+                                }
+                                for (var j = 0; j < _vectorLength; j++){
+                                    _wordVectorUpdate[l2, j] += _wordVectors[l1, j] * g;
+                                }
                             }
                         }
                         else
                         {
-                            for (int d = 0; d < _parameter.GetNegativeSamplingSize() + 1; d++)
+                            for (var d = 0; d < _parameter.GetNegativeSamplingSize() + 1; d++)
                             {
                                 int target;
                                 int label;
@@ -268,14 +309,24 @@ namespace WordToVec
                                 }
 
                                 l2 = target;
-                                f = _wordVectors.GetRow(l1).DotProduct(_wordVectorUpdate.GetRow(l2));
+                                f = 0;
+                                for (var j = 0; j < _vectorLength; j++)
+                                {
+                                    f += _wordVectors[l1, j] * _wordVectorUpdate[l2, j];
+                                }
                                 g = CalculateG(f, iteration.GetAlpha(), label);
-                                outputUpdate.Add(_wordVectorUpdate.GetRow(l2).Product(g));
-                                _wordVectorUpdate.Add(l2, _wordVectors.GetRow(l1).Product(g));
+                                for (var j = 0; j < _vectorLength; j++){
+                                    outputUpdate[j] += _wordVectorUpdate[l2, j] * g;
+                                }
+                                for (var j = 0; j < _vectorLength; j++){
+                                    _wordVectorUpdate[l2, j] += _wordVectors[l1, j] * g;
+                                }
                             }
                         }
 
-                        _wordVectors.Add(l1, outputUpdate);
+                        for (var j = 0; j < _vectorLength; j++){
+                            _wordVectors[l1, j] += outputUpdate[j];
+                        }
                     }
                 }
 

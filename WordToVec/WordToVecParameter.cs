@@ -8,7 +8,7 @@ namespace WordToVec
         private int _window = 5;
         private bool _hierarchicalSoftMax;
         private int _negativeSamplingSize = 5;
-        private int _numberOfIterations = 3;
+        private int _numberOfIterations = 2;
         private int _seed = 1;
 
         /**

@@ -1,3 +1,4 @@
+using System;
 using Corpus;
 
 namespace WordToVec
@@ -9,7 +10,7 @@ namespace WordToVec
         private int _sentencePosition;
         private readonly double _startingAlpha;
         private double _alpha;
-        public readonly CorpusStream corpus;
+        public readonly AbstractCorpus corpus;
         private readonly WordToVecParameter _wordToVecParameter;
 
         /**
@@ -18,7 +19,7 @@ namespace WordToVec
          * <param name="corpus">Corpus used to train word vectors using Word2Vec algorithm.</param>
          * <param name="wordToVecParameter">Parameters of the Word2Vec algorithm.</param>
          */
-        public Iteration(CorpusStream corpus, WordToVecParameter wordToVecParameter)
+        public Iteration(AbstractCorpus corpus, WordToVecParameter wordToVecParameter)
         {
             this.corpus = corpus;
             _wordToVecParameter = wordToVecParameter;
@@ -88,6 +89,7 @@ namespace WordToVec
                 if (sentence == null)
                 {
                     _iterationCount++;
+                    Console.WriteLine("Iteration " + _iterationCount);
                     _wordCount = 0;
                     _lastWordCount = 0;
                     corpus.Close();

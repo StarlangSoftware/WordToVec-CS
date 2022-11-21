@@ -35,7 +35,7 @@ namespace WordToVec
         public int CompareTo(object o)
         {
             var word = (VocabularyWord) o;
-            return word._count.CompareTo(_count);
+            return -word._count.CompareTo(_count);
         }
 
         /**

@@ -9,6 +9,7 @@ namespace WordToVec
     public class Vocabulary
     {
         private readonly List<VocabularyWord> _vocabulary;
+        private Dictionary<string, int> _wordMap;
         private int[] _table;
         private int _totalNumberOfWords;
 
@@ -18,13 +19,14 @@ namespace WordToVec
          * where after Huffman tree is created based on the number of occurrences of the words.</summary>
          * <param name="corpus">Corpus used to train word vectors using Word2Vec algorithm.</param>
          */
-        public Vocabulary(CorpusStream corpus)
+        public Vocabulary(AbstractCorpus corpus)
         {
+            _wordMap = new Dictionary<string, int>();
             var counts = new CounterHashMap<string>();
             corpus.Open();
             var sentence = corpus.GetSentence();
             while (sentence != null){
-                for (int i = 0; i < sentence.WordCount(); i++){
+                for (var i = 0; i < sentence.WordCount(); i++){
                     counts.Put(sentence.GetWord(i).GetName());
                 }
                 _totalNumberOfWords += sentence.WordCount();
@@ -39,6 +41,9 @@ namespace WordToVec
             CreateUniGramTable();
             ConstructHuffmanTree();
             _vocabulary.Sort(new TurkishWordComparator());
+            for (var i = 0; i < _vocabulary.Count; i++){
+                _wordMap[_vocabulary[i].GetName()] = i;
+            }
         }
 
         /**
@@ -57,8 +62,7 @@ namespace WordToVec
          */
         public int GetPosition(Word word)
         {
-            var vocabularyWord = new VocabularyWord(word.GetName(), 0);
-            return _vocabulary.BinarySearch(vocabularyWord, new TurkishWordComparator());
+            return _wordMap[word.GetName()];
         }
 
         public int GetTotalNumberOfWords()
