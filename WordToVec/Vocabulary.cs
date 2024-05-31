@@ -65,6 +65,10 @@ namespace WordToVec
             return _wordMap[word.GetName()];
         }
 
+        /// <summary>
+        /// Accessor for the total number of words
+        /// </summary>
+        /// <returns>Total number of words</returns>
         public int GetTotalNumberOfWords()
         {
             return _totalNumberOfWords;

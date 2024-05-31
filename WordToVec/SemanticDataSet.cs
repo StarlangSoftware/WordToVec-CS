@@ -8,11 +8,18 @@ namespace WordToVec
     {
         private List<WordPair> _pairs;
 
+        /// <summary>
+        /// Empty constructor for the semantic dataset.
+        /// </summary>
         public SemanticDataSet()
         {
             _pairs = new List<WordPair>();
         }
 
+        /// <summary>
+        /// Constructor for the semantic dataset. Reads word pairs and their similarity scores from an input file.
+        /// </summary>
+        /// <param name="fileName">Input file that stores the word pair and similarity scores.</param>
         public SemanticDataSet(string fileName)
         {
             _pairs = new List<WordPair>();
@@ -26,6 +33,12 @@ namespace WordToVec
             }
         }
         
+        /// <summary>
+        /// Calculates the similarities between words in the dataset. The word vectors will be taken from the input
+        /// vectorized dictionary.
+        /// </summary>
+        /// <param name="dictionary">Vectorized dictionary that stores the word vectors.</param>
+        /// <returns>Word pairs and their calculated similarities stored as a semantic dataset.</returns>
         public SemanticDataSet CalculateSimilarities(VectorizedDictionary dictionary) {
             var result = new SemanticDataSet();
             double similarity;
@@ -45,16 +58,29 @@ namespace WordToVec
             return result;
         }
         
+        /// <summary>
+        /// Returns the size of the semantic dataset.
+        /// </summary>
+        /// <returns>The size of the semantic dataset.</returns>
         public int Size(){
             return _pairs.Count;
         }
         
+        /// <summary>
+        /// Sorts the word pairs in the dataset according to the WordPairComparator.
+        /// </summary>
         private void Sort(){
             _pairs.Sort();
         }
 
+        /// <summary>
+        /// Finds and returns the index of a word pair in the pairs array list. If there is no such word pair, it
+        /// returns -1.
+        /// </summary>
+        /// <param name="wordPair">Word pair to search in the semantic dataset.</param>
+        /// <returns>Index of the given word pair in the pairs array list. If it does not exist, the method returns -1.</returns>
         public int Index(WordPair wordPair){
-            for (int i = 0; i < _pairs.Count; i++){
+            for (var i = 0; i < _pairs.Count; i++){
                 if (wordPair.Equals(_pairs[i])){
                     return i;
                 }
@@ -62,6 +88,11 @@ namespace WordToVec
             return -1;
         }
 
+        /// <summary>
+        /// Calculates the Spearman correlation coefficient with this dataset to the given semantic dataset.
+        /// </summary>
+        /// <param name="semanticDataSet">Given semantic dataset with which Spearman correlation coefficient is calculated.</param>
+        /// <returns>Spearman correlation coefficient with the given semantic dataset.</returns>
         public double SpearmanCorrelation(SemanticDataSet semanticDataSet){
             double sum = 0;
             int rank1, rank2;

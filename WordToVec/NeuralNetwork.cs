@@ -42,6 +42,10 @@ namespace WordToVec
             PrepareExpTable();
         }
 
+        /// <summary>
+        /// Returns the vocabulary size.
+        /// </summary>
+        /// <returns>The vocabulary size.</returns>
         public int VocabularySize(){
             return _vocabulary.Size();
         }
@@ -111,6 +115,14 @@ namespace WordToVec
             return (label - _expTable[(int) ((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha;
         }
 
+        /// <summary>
+        /// Calculate the update of outputs for word indexed with l2. It also calculates the word vector updates for word
+        /// indexed at l2.
+        /// </summary>
+        /// <param name="outputUpdate">Output update to be added.</param>
+        /// <param name="outputs">Current outputs.</param>
+        /// <param name="l2">Index of the input</param>
+        /// <param name="g">Multiplier for the update.</param>
         private void UpdateOutput(double[] outputUpdate, double[] outputs, int l2, double g){
             for (var j = 0; j < _vectorLength; j++){
                 outputUpdate[j] += _wordVectorUpdate[l2, j] * g;
