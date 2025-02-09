@@ -3,12 +3,12 @@
     <PropertyGroup>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>NlpToolkit-WordToVec</PackageId>
-        <PackageVersion>1.0.5</PackageVersion>
-        <TargetFrameworks>netcoreapp3.1;net8.0</TargetFrameworks>
+        <PackageVersion>1.0.6</PackageVersion>
+        <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="NlpToolkit-Corpus" Version="1.0.16" />
+      <PackageReference Include="NlpToolkit-Corpus" Version="1.0.17" />
     </ItemGroup>
 
 </Project>
